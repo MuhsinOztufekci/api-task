@@ -9,6 +9,8 @@ class Api
 
 	public static function getDb()
 	{
+		print("Test");
+
 		return self::$db;
 	}
 
@@ -47,7 +49,7 @@ class Api
 
 			foreach ($routes as $pattern => $target) {
 				$pattern = str_replace(array_keys($wildcards), array_values($wildcards), $pattern);
-				if (preg_match('#^'.$pattern.'$#i', "{$httpVerb} {$uri}", $matches)) {
+				if (preg_match('#^' . $pattern . '$#i', "{$httpVerb} {$uri}", $matches)) {
 					$params = [];
 					array_shift($matches);
 					if ($httpVerb === 'post') {
@@ -60,7 +62,7 @@ class Api
 				}
 			}
 
-			echo json_encode($response, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+			echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 	}
 }
