@@ -9,8 +9,6 @@ class Api
 
 	public static function getDb()
 	{
-		print("Test");
-
 		return self::$db;
 	}
 
@@ -38,6 +36,15 @@ class Api
 				'class' => 'ConstructionStages',
 				'method' => 'post',
 				'bodyType' => 'ConstructionStagesCreate'
+			],
+
+			'patch constructionStages/(:num)' => [
+				'class' => 'ConstructionStages',
+				'method' => 'patch',
+			],
+			'delete constructionStages/(:num)' => [
+				'class' => 'ConstructionStages',
+				'method' => 'delete',
 			],
 		];
 

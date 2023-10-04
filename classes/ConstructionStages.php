@@ -67,4 +67,47 @@ class ConstructionStages
 		]);
 		return $this->getSingle($this->db->lastInsertId());
 	}
+	public function patch($id, $data)
+	{
+		// Validate status field if sent
+		if (isset($data['status']) && !in_array($data['status'], ['NEW', 'PLANNED', 'DELETED'])) {
+			throw new Exception("Invalid status value. Status should be NEW, PLANNED, or DELETED.");
+		}
+
+		// Construct the SQL query dynamically based on provided fields
+		$fieldsToUpdate = [];
+		$values = [];
+		foreach ($data as $key => $value) {
+			if ($key !== 'id') {
+				$fieldsToUpdate[] = "$key = :$key";
+				$values[":$key"] = $value; // Use named placeholders here
+			}
+		}
+
+		// Execute the SQL query with named placeholders
+		$stmt = $this->db->prepare("
+			UPDATE construction_stages
+			SET " . implode(", ", $fieldsToUpdate) . "
+			WHERE ID = :id
+		");
+		$values[':id'] = $id;
+		$stmt->execute($values);
+
+		// Return the updated construction stage
+		return $this->getSingle($id);
+	}
+
+	public function delete($id)
+	{
+		// Update status to DELETED
+		$stmt = $this->db->prepare("
+            UPDATE construction_stages
+            SET status = 'DELETED'
+            WHERE ID = :id
+        ");
+		$stmt->execute(['id' => $id]);
+
+		// Return success message or handle as needed
+		return ['message' => 'Construction stage deleted successfully.'];
+	}
 }
