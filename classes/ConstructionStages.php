@@ -48,8 +48,16 @@ class ConstructionStages
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 
+
 	public function post(ConstructionStagesCreate $data)
 	{
+		try {
+			Validation::validateData($data); // Validate the data
+		} catch (Exception $e) {
+			echo $e->getMessage(); // Catch the errors and show the messages
+			return;
+		}
+
 		$stmt = $this->db->prepare("
 			INSERT INTO construction_stages
 			    (name, start_date, end_date, duration, durationUnit, color, externalId, status)
@@ -67,10 +75,11 @@ class ConstructionStages
 		]);
 		return $this->getSingle($this->db->lastInsertId());
 	}
-	public function patch($id, $data)
+
+	public function patch($id, ConstructionStagesCreate $data)
 	{
 		// Validate status field if sent
-		if (isset($data['status']) && !in_array($data['status'], ['NEW', 'PLANNED', 'DELETED'])) {
+		if (isset($data->status) && !in_array($data->status, ['NEW', 'PLANNED', 'DELETED'])) {
 			throw new Exception("Invalid status value. Status should be NEW, PLANNED, or DELETED.");
 		}
 
@@ -85,12 +94,12 @@ class ConstructionStages
 		}
 
 		// Execute the SQL query with named placeholders
-		$stmt = $this->db->prepare("
-			UPDATE construction_stages
-			SET " . implode(", ", $fieldsToUpdate) . "
-			WHERE ID = :id
-		");
 		$values[':id'] = $id;
+		$stmt = $this->db->prepare("
+        UPDATE construction_stages
+        SET " . implode(", ", $fieldsToUpdate) . "
+        WHERE ID = :id
+    ");
 		$stmt->execute($values);
 
 		// Return the updated construction stage
