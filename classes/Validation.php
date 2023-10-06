@@ -1,6 +1,21 @@
 <?php
+
+/**
+ * Class Validation
+ *
+ * A utility class for validating construction stage data.
+ */
 class Validation
 {
+    /**
+     * Validates the provided data for construction stages.
+     *
+     * @param mixed $data The data to be validated.
+     *
+     * @throws Exception If validation fails. The exception message contains JSON-encoded error details.
+     *
+     * @return bool True if validation succeeds.
+     */
     public static function validateData($data)
     {
         $errors = [];
@@ -54,7 +69,13 @@ class Validation
 
         return true;
     }
-
+    /**
+     * Checks if the given date is in ISO8601 format.
+     *
+     * @param string $date The date to validate.
+     *
+     * @return bool True if the date is in valid ISO8601 format, false otherwise.
+     */
     private static function isValidIso8601Date($date)
     {
         return (bool) preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $date);

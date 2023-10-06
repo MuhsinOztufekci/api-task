@@ -1,14 +1,27 @@
 <?php
 
+/**
+ * Class ConstructionStages
+ *
+ * A class representing construction stages and providing methods to interact with the database.
+ */
 class ConstructionStages
 {
 	private $db;
+	/**
+	 * ConstructionStages constructor.
+	 * Initializes the database connection.
+	 */
 
 	public function __construct()
 	{
 		$this->db = Api::getDb();
 	}
-
+	/**
+	 * Retrieves all construction stages from the database.
+	 *
+	 * @return array An array of construction stages data.
+	 */
 	public function getAll()
 	{
 		$stmt = $this->db->prepare("
@@ -27,6 +40,14 @@ class ConstructionStages
 		$stmt->execute();
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
+
+	/**
+	 * Retrieves a single construction stage based on its ID from the database.
+	 *
+	 * @param int $id The ID of the construction stage.
+	 *
+	 * @return array An associative array containing construction stage data.
+	 */
 
 	public function getSingle($id)
 	{
@@ -47,6 +68,16 @@ class ConstructionStages
 		$stmt->execute(['id' => $id]);
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
+
+	/**
+	 * Inserts a new construction stage into the database based on the provided data.
+	 *
+	 * @param ConstructionStagesCreate $data The data for creating a new construction stage.
+	 *
+	 * @return array An associative array containing the newly created construction stage data.
+	 *
+	 * @throws Exception If validation fails or duration calculation encounters an error.
+	 */
 
 	public function post(ConstructionStagesCreate $data)
 	{
@@ -91,6 +122,16 @@ class ConstructionStages
 		}
 	}
 
+	/**
+	 * Updates an existing construction stage in the database based on the provided ID and data.
+	 *
+	 * @param int $id The ID of the construction stage to update.
+	 * @param ConstructionStagesCreate $data The updated data for the construction stage.
+	 *
+	 * @return array An associative array containing the updated construction stage data.
+	 *
+	 * @throws Exception If validation fails or an invalid status value is provided.
+	 */
 
 	public function patch($id, ConstructionStagesCreate $data)
 	{
@@ -115,13 +156,19 @@ class ConstructionStages
         UPDATE construction_stages
         SET " . implode(", ", $fieldsToUpdate) . "
         WHERE ID = :id
-    ");
+        ");
 		$stmt->execute($values);
 
 		// Return the updated construction stage
 		return $this->getSingle($id);
 	}
-
+	/**
+	 * Deletes a construction stage from the database based on its ID.
+	 *
+	 * @param int $id The ID of the construction stage to delete.
+	 *
+	 * @return array An associative array containing a success message.
+	 */
 	public function delete($id)
 	{
 		// Update status to DELETED
