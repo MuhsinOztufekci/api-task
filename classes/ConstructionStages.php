@@ -133,35 +133,65 @@ class ConstructionStages
 	 * @throws Exception If validation fails or an invalid status value is provided.
 	 */
 
-	public function patch($id, ConstructionStagesCreate $data)
+	/**
+	 * Updates an existing construction stage in the database based on the provided ID and data.
+	 *
+	 * @param int $id The ID of the construction stage to update.
+	 * @param stdClass $data The updated data for the construction stage.
+	 *
+	 * @return array An associative array containing the updated construction stage data.
+	 *
+	 * @throws Exception If validation fails or an invalid status value is provided.
+	 */
+	public function patch($id, $data)
 	{
-		// Validate status field if sent
-		if (isset($data->status) && !in_array($data->status, ['NEW', 'PLANNED', 'DELETED'])) {
-			throw new Exception("Invalid status value. Status should be NEW, PLANNED, or DELETED.");
-		}
+		try {
+			// Gelen veriyi JSON'dan PHP nesnesine dönüştür
 
-		// Construct the SQL query dynamically based on provided fields
-		$fieldsToUpdate = [];
-		$values = [];
-		foreach ($data as $key => $value) {
-			if ($key !== 'id') {
-				$fieldsToUpdate[] = "$key = :$key";
-				$values[":$key"] = $value; // Use named placeholders here
+
+			// JSON verisini ConstructionStagesUpdate sınıfına uygun bir nesneye dönüştür
+			$updateData = new ConstructionStagesUpdate($data);
+
+			// Veriyi doğrulama işlemi
+			Validation::validateData($updateData);
+
+			// Veritabanında güncellenecek alanları belirle
+			$updateFields = [
+				'name' => $updateData->name,
+				'start_date' => $updateData->startDate,
+				'end_date' => $updateData->endDate,
+				'duration' => $updateData->duration,
+				'durationUnit' => $updateData->durationUnit,
+				'color' => $updateData->color,
+				'externalId' => $updateData->externalId,
+				'status' => $updateData->status,
+				// Diğer alanlar buraya eklenecek
+			];
+
+			// Durum değerini kontrol et
+			if (isset($updateData->status) && !in_array($updateData->status, ['NEW', 'PLANNED', 'DELETED'])) {
+				throw new Exception("Invalid status value. Status should be NEW, PLANNED, or DELETED.");
 			}
+
+			// SQL sorgusunu hazırla
+			$updateFieldsString = implode(', ', array_map(function ($field) {
+				return "$field = :$field";
+			}, array_keys($updateFields)));
+
+			// Veritabanında güncelleme işlemi
+			$stmt = $this->db->prepare("UPDATE construction_stages SET $updateFieldsString WHERE ID = :id");
+			$updateFields[':id'] = $id;
+			$stmt->execute($updateFields);
+
+			// Güncellenmiş veriyi döndür
+			return $this->getSingle($id);
+		} catch (Exception $e) {
+			http_response_code(400); // Bad Request
+			echo json_encode(["error" => $e->getMessage()]);
+			return null;
 		}
-
-		// Execute the SQL query with named placeholders
-		$values[':id'] = $id;
-		$stmt = $this->db->prepare("
-        UPDATE construction_stages
-        SET " . implode(", ", $fieldsToUpdate) . "
-        WHERE ID = :id
-        ");
-		$stmt->execute($values);
-
-		// Return the updated construction stage
-		return $this->getSingle($id);
 	}
+
 	/**
 	 * Deletes a construction stage from the database based on its ID.
 	 *
@@ -171,15 +201,24 @@ class ConstructionStages
 	 */
 	public function delete($id)
 	{
-		// Update status to DELETED
-		$stmt = $this->db->prepare("
+		try {
+			// Validate if construction stage exists with the given ID (you might want to implement this validation)
+			// ...
+
+			// Update status to DELETED
+			$stmt = $this->db->prepare("
             UPDATE construction_stages
             SET status = 'DELETED'
             WHERE ID = :id
         ");
-		$stmt->execute(['id' => $id]);
+			$stmt->execute(['id' => $id]);
 
-		// Return success message or handle as needed
-		return ['message' => 'Construction stage deleted successfully.'];
+			// Return success message or handle as needed
+			return ['message' => 'Construction stage deleted successfully.'];
+		} catch (Exception $e) {
+			http_response_code(400); // Bad Request
+			echo json_encode(["error" => $e->getMessage()]);
+			return null;
+		}
 	}
 }
