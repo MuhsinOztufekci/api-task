@@ -48,33 +48,49 @@ class ConstructionStages
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 
-
 	public function post(ConstructionStagesCreate $data)
 	{
 		try {
-			Validation::validateData($data); // Validate the data
+			// Doğrulamalar
+			Validation::validateData($data);
+
+			// Süre ve süre birimini hesapla
+			$durationInfo = DurationCalculator::calculateDuration($data->startDate, $data->endDate, $data->durationUnit);
+
+			if ($durationInfo === null) {
+				// Süre hesaplanamazsa, uygun bir hata döndür
+				http_response_code(400); // Bad Request
+				echo json_encode(["error" => "Invalid date or duration calculation error."]);
+				return;
+			}
+
+			// SQL sorgusunu hazırla ve çalıştır
+			$stmt = $this->db->prepare("
+            INSERT INTO construction_stages
+            (name, start_date, end_date, duration, durationUnit, color, externalId, status)
+            VALUES (:name, :start_date, :end_date, :duration, :durationUnit, :color, :externalId, :status)
+        ");
+			$stmt->execute([
+				'name' => $data->name,
+				'start_date' => $data->startDate,
+				'end_date' => $data->endDate,
+				'duration' => $durationInfo['value'], // Hesaplanan süre değerini kullan
+				'durationUnit' => $durationInfo['unit'], // Hesaplanan süre birimini kullan
+				'color' => $data->color,
+				'externalId' => $data->externalId,
+				'status' => $data->status,
+			]);
+
+			// Yeni eklenen kaydı döndür
+			return $this->getSingle($this->db->lastInsertId());
 		} catch (Exception $e) {
-			echo $e->getMessage(); // Catch the errors and show the messages
+			// Hataları uygun bir şekilde işle
+			http_response_code(400); // Bad Request
+			echo json_encode(["error" => $e->getMessage()]);
 			return;
 		}
-
-		$stmt = $this->db->prepare("
-			INSERT INTO construction_stages
-			    (name, start_date, end_date, duration, durationUnit, color, externalId, status)
-			    VALUES (:name, :start_date, :end_date, :duration, :durationUnit, :color, :externalId, :status)
-			");
-		$stmt->execute([
-			'name' => $data->name,
-			'start_date' => $data->startDate,
-			'end_date' => $data->endDate,
-			'duration' => $data->duration,
-			'durationUnit' => $data->durationUnit,
-			'color' => $data->color,
-			'externalId' => $data->externalId,
-			'status' => $data->status,
-		]);
-		return $this->getSingle($this->db->lastInsertId());
 	}
+
 
 	public function patch($id, ConstructionStagesCreate $data)
 	{
